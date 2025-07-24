@@ -152,5 +152,4 @@ if (isDevelopment()) {
   });
   
   console.log('🔧 Configuration loaded:', JSON.stringify(safeConfig, null, 2));
-  secretKeys.forEa
 }

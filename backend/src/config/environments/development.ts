@@ -2,11 +2,26 @@
 import { Config } from '../index';
 
 export const development: Partial<Config> = {
-  MAX_CONCURRENT_TESTS: 2, // Lower for dev machines
-  TEST_TIMEOUT_MS: 60000, // 1 minute for faster dev iteration
-  API_RATE_LIMIT: 1000, // Higher for testing
-  PROMETHEUS_ENABLED: false, // Reduce overhead in dev
-  ENABLE_COST_TRACKING: false, // Not needed in dev
+  // Server
+  PORT: 3000,
+  
+  // Queue System - Lower limits for development
+  MAX_CONCURRENT_TESTS: 2,
+  TEST_TIMEOUT_MS: 180000, // 3 minutes
+  
+  // Security - Relaxed for development
+  API_RATE_LIMIT: 1000,
+  
+  // Monitoring - Minimal
+  PROMETHEUS_ENABLED: false,
+  JAEGER_ENABLED: false,
+  
+  // Cost Tracking - Optional in dev
+  ENABLE_COST_TRACKING: false,
+  
+  // Evidence Storage - Local in development
+  EVIDENCE_STORAGE_TYPE: 'local' as const,
+  EVIDENCE_STORAGE_PATH: './tmp/evidence',
 };
 
 // backend/src/config/environments/staging.ts
