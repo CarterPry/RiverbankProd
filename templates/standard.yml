@@ -1,0 +1,50 @@
+name: Standard Security Assessment
+description: Comprehensive security testing for SOC 2 compliance
+duration: 2hr
+priority: critical,standard
+tools:
+  - nmap
+  - nikto
+  - sqlmap
+  - burpsuite
+  - zap
+  - metasploit
+  - testssl
+  - wpscan
+attacks:
+  - port_scanning
+  - service_enumeration
+  - sql_injection
+  - xss
+  - csrf
+  - clickjacking
+  - authentication_bypass
+  - session_management
+  - ssl_vulnerabilities
+  - directory_traversal
+  - file_upload
+  - xxe
+  - ssrf
+parameters:
+  nmap:
+    flags: "-sV -sC -A -T3"
+    ports: "all"
+  nikto:
+    flags: "-h -ssl -maxtime 3600 -Tuning 123456789"
+  sqlmap:
+    flags: "--batch --risk=2 --level=3"
+  burpsuite:
+    mode: "passive"
+    scope: "in-scope-only"
+  zap:
+    mode: "standard"
+    strength: "medium"
+thresholds:
+  critical_findings_abort: 10
+  high_findings_escalate: 20
+  progressive_testing: true
+reporting:
+  format: detailed
+  include_raw_output: true
+  evidence_collection: true
+  screenshot_failures: true 

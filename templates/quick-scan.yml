@@ -1,0 +1,27 @@
+name: Quick Security Scan
+description: Lightweight security assessment for rapid feedback
+duration: 15min
+priority: standard
+tools:
+  - nikto
+  - nmap
+  - testssl
+attacks:
+  - port_scanning
+  - ssl_vulnerabilities
+  - basic_web_vulnerabilities
+  - header_security
+parameters:
+  nmap:
+    flags: "-sV -sC -T4"
+    ports: "top-1000"
+  nikto:
+    flags: "-h -ssl -maxtime 900"
+  testssl:
+    flags: "--fast"
+thresholds:
+  critical_findings_abort: 3
+  high_findings_escalate: 5
+reporting:
+  format: summary
+  include_raw_output: false 

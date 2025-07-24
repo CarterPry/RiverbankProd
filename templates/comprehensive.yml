@@ -1,0 +1,87 @@
+name: Comprehensive Security Audit
+description: Full-scope penetration testing with all attack vectors
+duration: 8hr
+priority: critical,standard,lowPriority
+tools:
+  - nmap
+  - nikto
+  - sqlmap
+  - burpsuite
+  - zap
+  - metasploit
+  - testssl
+  - wpscan
+  - hydra
+  - john
+  - hashcat
+  - aircrack-ng
+  - wireshark
+  - gobuster
+  - ffuf
+  - nuclei
+attacks:
+  - port_scanning
+  - service_enumeration
+  - vulnerability_scanning
+  - sql_injection
+  - xss
+  - csrf
+  - clickjacking
+  - authentication_bypass
+  - session_management
+  - ssl_vulnerabilities
+  - directory_traversal
+  - file_upload
+  - xxe
+  - ssrf
+  - ldap_injection
+  - command_injection
+  - buffer_overflow
+  - privilege_escalation
+  - lateral_movement
+  - data_exfiltration
+  - dos_attacks
+  - wireless_attacks
+  - social_engineering
+  - physical_security
+parameters:
+  nmap:
+    flags: "-sV -sC -A -T2 -p-"
+    scripts: "vuln,exploit"
+  nikto:
+    flags: "-h -ssl -maxtime 7200 -Tuning 123456789x"
+  sqlmap:
+    flags: "--batch --risk=3 --level=5 --technique=BEUSTQ"
+  burpsuite:
+    mode: "active"
+    scope: "all"
+  metasploit:
+    mode: "autopwn"
+    exploits: "all-stable"
+  hydra:
+    threads: 16
+    timeout: 30
+  nuclei:
+    templates: "all"
+    severity: "low,medium,high,critical"
+thresholds:
+  critical_findings_abort: 50
+  high_findings_escalate: 100
+  progressive_testing: true
+  parallel_limit: 8
+reporting:
+  format: forensic
+  include_raw_output: true
+  evidence_collection: true
+  screenshot_failures: true
+  video_capture: true
+  network_capture: true
+  generate_executive_summary: true
+  compliance_mapping: true
+scheduling:
+  off_hours_only: true
+  stagger_aggressive_tests: true
+  resource_limits:
+    cpu: "80%"
+    memory: "8GB"
+    network: "100Mbps" 

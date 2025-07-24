@@ -1,0 +1,222 @@
+# docker-compose.yml
+version: '3.8'
+
+services:
+  # PostgreSQL with pgvector
+  db:
+    image: ankane/pgvector:v0.5.1-pg16
+    container_name: soc2-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_DB: ${POSTGRES_DB:-soc2_testing}
+    volumes:
+      - ./database/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    networks:
+      - soc2-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Redis for BullMQ
+  redis:
+    image: redis:7-alpine
+    container_name: soc2-redis
+    restart: unless-stopped
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_data:/data
+    ports:
+      - "6379:6379"
+    networks:
+      - soc2-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Ollama for embeddings
+  embeddings:
+    image: ollama/ollama:latest
+    container_name: soc2-embeddings
+    restart: unless-stopped
+    volumes:
+      - ollama_data:/root/.ollama
+    ports:
+      - "11434:11434"
+    networks:
+      - soc2-network
+    environment:
+      OLLAMA_HOST: 0.0.0.0
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:11434/api/tags"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Kali Linux for security tools
+  kali:
+    build:
+      context: ./docker/kali-toolset
+      dockerfile: Dockerfile
+    image: soc2-kali:latest
+    container_name: soc2-kali
+    restart: unless-stopped
+    command: tail -f /dev/null  # Keep container running
+    volumes:
+      - kali_workspace:/workspace
+      - kali_results:/results
+      - /var/run/docker.sock:/var/run/docker.sock:ro  # For spawning sibling containers
+    networks:
+      - soc2-network
+      - isolated-test
+    cap_add:
+      - NET_ADMIN
+      - SYS_ADMIN
+    security_opt:
+      - apparmor:unconfined  # For development; restrict in production
+    environment:
+      RESULTS_DIR: /results
+
+  # Backend API
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+      target: development
+    container_name: soc2-backend
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      embeddings:
+        condition: service_healthy
+    environment:
+      NODE_ENV: ${NODE_ENV:-development}
+      PG_CONNECTION_STRING: postgres://postgres:postgres@db:5432/soc2_testing
+      BULLMQ_REDIS_URL: redis://redis:6379
+      EMBEDDING_API_URL: http://embeddings:11434/api/embeddings
+      DOCKER_HOST: unix:///var/run/docker.sock
+    volumes:
+      - ./backend:/app
+      - /app/node_modules  # Prevent overwriting node_modules
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - shared_results:/results
+    ports:
+      - "3000:3000"
+      - "9229:9229"  # Node.js debugger
+    networks:
+      - soc2-network
+    command: npm run dev
+
+  # Frontend (React)
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      target: development
+    container_name: soc2-frontend
+    restart: unless-stopped
+    depends_on:
+      - backend
+    environment:
+      REACT_APP_API_URL: ${REACT_APP_API_URL:-http://localhost:3000}
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    ports:
+      - "3001:3000"
+    networks:
+      - soc2-network
+    command: npm start
+
+  # Prometheus
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: soc2-prometheus
+    restart: unless-stopped
+    volumes:
+      - ./monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+    ports:
+      - "9090:9090"
+    networks:
+      - soc2-network
+
+  # Grafana
+  grafana:
+    image: grafana/grafana:latest
+    container_name: soc2-grafana
+    restart: unless-stopped
+    depends_on:
+      - prometheus
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_PASSWORD:-admin}
+      GF_USERS_ALLOW_SIGN_UP: "false"
+    volumes:
+      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./monitoring/grafana/dashboards:/var/lib/grafana/dashboards:ro
+      - grafana_data:/var/lib/grafana
+    ports:
+      - "3002:3000"
+    networks:
+      - soc2-network
+
+  # Loki for logs
+  loki:
+    image: grafana/loki:latest
+    container_name: soc2-loki
+    restart: unless-stopped
+    volumes:
+      - ./monitoring/loki/loki-config.yaml:/etc/loki/config.yaml:ro
+      - loki_data:/loki
+    command: -config.file=/etc/loki/config.yaml
+    ports:
+      - "3100:3100"
+    networks:
+      - soc2-network
+
+  # Jaeger for tracing
+  jaeger:
+    image: jaegertracing/all-in-one:latest
+    container_name: soc2-jaeger
+    restart: unless-stopped
+    environment:
+      COLLECTOR_OTLP_ENABLED: "true"
+    ports:
+      - "16686:16686"  # Jaeger UI
+      - "4317:4317"    # OTLP gRPC
+      - "4318:4318"    # OTLP HTTP
+    networks:
+      - soc2-network
+
+volumes:
+  postgres_data:
+  redis_data:
+  ollama_data:
+  kali_workspace:
+  kali_results:
+  shared_results:
+  prometheus_data:
+  grafana_data:
+  loki_data:
+
+networks:
+  soc2-network:
+    driver: bridge
+  isolated-test:
+    driver: bridge
+    internal: true  # No external access for test network

@@ -1,0 +1,25 @@
+{
+  "name": "soc2-testing-platform",
+  "version": "1.0.0",
+  "description": "SOC 2 Penetration Testing Platform with MCP server and embeddings",
+  "private": true,
+  "workspaces": [
+    "backend",
+    "frontend"
+  ],
+  "scripts": {
+    "start:all": "npm run start --workspaces",
+    "test:all": "npm test --workspaces",
+    "build:all": "npm run build --workspaces",
+    "dev:all": "npm run dev --workspaces",
+    "install:all": "npm install --workspaces"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "typescript": "^5.0.0"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=8.0.0"
+  }
+}
