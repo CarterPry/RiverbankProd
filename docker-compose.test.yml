@@ -1,0 +1,38 @@
+version: '3.8'
+
+services:
+  postgres-test:
+    image: pgvector/pgvector:pg16
+    container_name: soc2-postgres-test
+    environment:
+      POSTGRES_USER: soc2user
+      POSTGRES_PASSWORD: soc2pass
+      POSTGRES_DB: soc2_test
+    ports:
+      - "5433:5432"
+    volumes:
+      - ./database/init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - soc2-test-network
+
+  redis-test:
+    image: redis:7-alpine
+    container_name: soc2-redis-test
+    ports:
+      - "6380:6379"
+    networks:
+      - soc2-test-network
+
+  test-target:
+    image: vulnerables/web-dvwa
+    container_name: soc2-test-target
+    ports:
+      - "8080:80"
+    networks:
+      - soc2-test-network
+    extra_hosts:
+      - "testapp.local:127.0.0.1"
+
+networks:
+  soc2-test-network:
+    driver: bridge

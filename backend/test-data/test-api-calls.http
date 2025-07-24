@@ -1,0 +1,44 @@
+### Health Check
+GET http://localhost:3001/health
+
+### Create Test User
+POST http://localhost:3001/api/auth/register
+Content-Type: application/json
+
+{
+  "email": "test@example.com",
+  "password": "TestPassword123!",
+  "name": "Test User"
+}
+
+### Login
+POST http://localhost:3001/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "test@example.com",
+  "password": "TestPassword123!"
+}
+
+### Create Workflow (replace TOKEN with actual token from login)
+POST http://localhost:3001/api/workflows
+Authorization: Bearer TOKEN
+Content-Type: application/json
+
+{
+  "intent": "security_test",
+  "form_data": {
+    "target": "testapp.local",
+    "scope": "full",
+    "info_description": "Test for SQL injection and XSS vulnerabilities",
+    "contact": "test@example.com"
+  }
+}
+
+### Get Workflow Status
+GET http://localhost:3001/api/workflows/WORKFLOW_ID
+Authorization: Bearer TOKEN
+
+### Approve Workflow
+POST http://localhost:3001/api/workflows/WORKFLOW_ID/approve
+Authorization: Bearer TOKEN

@@ -1,0 +1,10 @@
+{
+  "intent": "security_test",
+  "form_data": {
+    "target": "testapp.local",
+    "scope": "full",
+    "info_description": "Test our web application for SQL injection and XSS vulnerabilities",
+    "contact": "test@example.com",
+    "compliance_requirements": ["SOC2", "ISO27001"]
+  }
+}

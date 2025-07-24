@@ -20,6 +20,9 @@ import {
   MCPToolCall,
   MCPToolResponse,
   ValidationError,
+  TestPriority,
+  ViableAttacks,
+  TrustService,
 } from '@shared/types';
 import { validateToolCall } from '../layers/validation';
 import { mapAttackToCommand } from '../layers/translation';
@@ -82,7 +85,7 @@ export class MCPServer {
           content: [
             {
               type: 'text',
-              text: `Error: ${error.message}`,
+              text: `Error: ${(error as Error).message}`,
             },
           ],
           isError: true,
@@ -105,7 +108,7 @@ export class MCPServer {
         return this.executeAuthTest(args);
       case 'analyze_headers':
         return this.executeHeaderAnalysis(args);
-      default:
+                default:
         throw new ValidationError(`Unknown tool: ${name}`);
     }
   }
@@ -260,7 +263,7 @@ export class MCPServer {
         formData.info_description,
         Object.values(AttackType)
       );
-      matchedAttacks = matches.map(m => m.attack);
+      matchedAttacks = matches.map((m: any) => m.attack);
     }
 
     // Categorize attacks by priority
